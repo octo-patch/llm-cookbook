@@ -13,18 +13,22 @@ import os
 from dotenv import load_dotenv, find_dotenv
 from openai import OpenAI
 
+from utils.chat_settings import chat_settings
+
 loaded = load_dotenv(find_dotenv(), override=True)
 # 从环境变量中获取 OpenAI API Key 或者直接赋值
 API_KEY = os.getenv("API_KEY")
 
-# 如果您使用的是官方 API，就直接用 https://api.siliconflow.cn/v1 就行。
-BASE_URL = "https://api.siliconflow.cn/v1"
+# Explicit model settings take precedence over provider defaults.
+BASE_URL, MODEL_NAME = chat_settings("Qwen/Qwen3-8B")
 
 # 基于openai的OpenAI实例
 openai_client = OpenAI(api_key=API_KEY, base_url=BASE_URL, max_retries=3)
 
 
-def get_completions(llm_prompt, model_endpoint="Qwen/Qwen3-8B"):
+def get_completions(llm_prompt, model_endpoint=None, max_tokens=4096):
+    if model_endpoint is None:
+        model_endpoint = MODEL_NAME
     extra_body = {}
     if "Qwen3" in model_endpoint:
         extra_body = {
@@ -39,7 +43,7 @@ def get_completions(llm_prompt, model_endpoint="Qwen/Qwen3-8B"):
                                                      ],
                                                      n=1, temperature=0, seed=42,
                                                      presence_penalty=0, frequency_penalty=0,
-                                                     max_tokens=4096, extra_body=extra_body
+                                                     max_tokens=max_tokens, extra_body=extra_body
                                                      )
 
     return response.choices[0].message.content.strip()

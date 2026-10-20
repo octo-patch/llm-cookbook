@@ -24,14 +24,15 @@ from langchain.prompts import MessagesPlaceholder
 from langchain.tools import tool
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.utils.function_calling import convert_to_openai_function
-from langchain_openai.chat_models import ChatOpenAI
+from utils.chat_settings import chat_settings
+from utils.minimax_chat import create_chat_model
 from pydantic import BaseModel, Field
 
 loaded = load_dotenv(find_dotenv(), override=True)
 # 从环境变量中获取 OpenAI API Key 或者直接赋值
 API_KEY = os.getenv("API_KEY")
-# 如果您使用的是官方 API，就直接用 https://api.siliconflow.cn/v1 就行。
-BASE_URL = "https://api.siliconflow.cn/v1"
+# Saved model choices take precedence over provider defaults.
+BASE_URL, CHAT_MODEL_NAME = chat_settings("Qwen/Qwen3-8B", "CHAT_MODEL_NAME")
 
 pn.extension()
 
@@ -122,7 +123,7 @@ def create_your_own(query: str) -> str:
 # 将之前定义的工具加入工具列表
 tools = [get_current_temperature, search_wikipedia, create_your_own]
 
-chat_model = ChatOpenAI(temperature=0, model_name="Qwen/Qwen3-8B", max_tokens=4096,
+chat_model = create_chat_model(temperature=0, model_name=CHAT_MODEL_NAME, max_tokens=4096,
                         openai_api_key=API_KEY, openai_api_base=BASE_URL, max_retries=3,
                         seed=42, presence_penalty=0.1, frequency_penalty=0.1,
                         extra_body={
